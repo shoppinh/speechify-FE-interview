@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 /**
  * Gets bounding boxes for an element. This is implemented for you
  */
@@ -42,32 +44,12 @@ export function getLineHeightOfFirstLine(element: HTMLElement): number {
     throw new Error("Invalid element provided.");
   }
 
-  // Create a Range object
-  const range = document.createRange();
-
-  // Initialize the range to the start of the element
-  range.setStart(element, 0);
-
-  // Create a clone of the element to avoid affecting the actual DOM
-  const clone = element.cloneNode(true);
-
-  // Append the clone to the body for measurement
-  clone.style.position = "absolute";
-  clone.style.visibility = "hidden";
-  document.body.appendChild(clone);
-
-  // Measure the height of the first line
-  const span = document.createElement("span");
-  span.textContent = " ";
-  clone.insertBefore(span, clone.firstChild);
-
-  range.setEndAfter(span);
-  const rect = range.getBoundingClientRect();
-
-  // Clean up by removing the clone
-  document.body.removeChild(clone);
-
-  return rect.height;
+  const { height } = element.getBoundingClientRect();
+  if (!element.style.lineHeight || !element.style.fontSize) return height;
+  return (
+    Number(element.style.lineHeight) *
+    Number(element.style.fontSize.split("px")[0])
+  );
 }
 
 export type HoveredElementInfo = {
@@ -85,4 +67,40 @@ export type HoveredElementInfo = {
  */
 export function useHoveredParagraphCoordinate(
   parsedElements: HTMLElement[],
-): HoveredElementInfo | null {}
+): HoveredElementInfo | null {
+  const [hoveredElementInfo, setHoveredElementInfo] = useState<
+  HoveredElementInfo | null
+>(null);
+
+useEffect(() => {
+  const handleMouseMove = (event: MouseEvent) => {
+    const hoveredElement = parsedElements.find((element) =>
+      isPointInsideElement(
+        { x: event.pageX, y: event.pageY },
+        element
+      )
+    );
+
+    if (hoveredElement) {
+      const bounds = getElementBounds(hoveredElement);
+      const heightOfFirstLine = getLineHeightOfFirstLine(hoveredElement);
+      setHoveredElementInfo({
+        element: hoveredElement,
+        top: bounds.top,
+        left: bounds.left,
+        heightOfFirstLine,
+      });
+    } else {
+      setHoveredElementInfo(null);
+    }
+  };
+
+  window.addEventListener("mousemove", handleMouseMove);
+
+  return () => {
+    window.removeEventListener("mousemove", handleMouseMove);
+  };
+}, [parsedElements]);
+
+return hoveredElementInfo;
+}
