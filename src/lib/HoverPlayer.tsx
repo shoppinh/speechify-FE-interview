@@ -41,18 +41,20 @@ export default function HoverPlayer() {
       speechify(hoveredElement.element);
     }
   };
+  if (!hoveredElement) {
+    return null;
+  }
 
 
 
   return (
     <div
-      id="player"
+      id="hover-player"
       style={{
         position: "absolute",
         ...(hoveredElement && { top: hoveredElement.top }),
         ...(hoveredElement && { left: hoveredElement.left-10 }),
         ...(hoveredElement && { height: hoveredElement.heightOfFirstLine }),
-        ...(!hoveredElement && { display: "none" }),
       }}
     >
       <PlayButton onClick={handlePlayClick} />
